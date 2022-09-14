@@ -718,9 +718,9 @@ namespace UnityEngine.Rendering.Universal
             camera.GetVolumeLayerMaskAndTrigger(additionalCameraData, out LayerMask layerMask, out Transform trigger);
             VolumeManager.instance.ResetMainStack();
             VolumeManager.instance.Update(trigger, layerMask);
-            UpdateRenderSetting();
+            //UpdateRenderSetting();
         }
-
+        /*
         static void UpdateRenderSetting()
         {
             var stack = VolumeManager.instance.stack;
@@ -754,6 +754,7 @@ namespace UnityEngine.Rendering.Universal
                 }
             }
         }
+		*/
         static bool CheckPostProcessForDepth(in CameraData cameraData)
         {
             if (!cameraData.postProcessEnabled)
