@@ -85,7 +85,10 @@ namespace UnityEngine.Rendering.Universal
             }
             cmd.SetGlobalVector(ShaderConstants._SourceSize, new Vector4(width, height, 1.0f / width, 1.0f / height));
         }
-
+        internal static void FinalSourceScaleBias(CommandBuffer cmd, float scale)
+        {
+            cmd.SetGlobalVector(ShaderConstants._FinalSourceScaleBias, new Vector4(1/scale, 1/scale,0,0));
+        }
         // Precomputed shader ids to same some CPU cycles (mostly affects mobile)
         static class ShaderConstants
         {
@@ -97,6 +100,7 @@ namespace UnityEngine.Rendering.Universal
             public static readonly int _Dithering_Params = Shader.PropertyToID("_Dithering_Params");
 
             public static readonly int _SourceSize = Shader.PropertyToID("_SourceSize");
+            public static readonly int _FinalSourceScaleBias = Shader.PropertyToID("_FinalSourceScaleBias");
         }
     }
 }

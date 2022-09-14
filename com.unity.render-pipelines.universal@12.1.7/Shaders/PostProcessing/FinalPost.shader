@@ -25,6 +25,7 @@ Shader "Hidden/Universal Render Pipeline/FinalPost"
         float2 _Grain_Params;
         float4 _Grain_TilingParams;
         float4 _Dithering_Params;
+		float4 _FinalSourceScaleBias;
 
         #if SHADER_TARGET >= 45
             #define FSR_INPUT_TEXTURE _SourceTex
@@ -46,6 +47,7 @@ Shader "Hidden/Universal Render Pipeline/FinalPost"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
             float2 uv = UnityStereoTransformScreenSpaceTex(input.uv);
+			uv = uv.xy * _FinalSourceScaleBias.xy;
             float2 positionNDC = uv;
             int2   positionSS  = uv * _SourceSize.xy;
 

@@ -894,7 +894,7 @@ namespace UnityEngine.Rendering.Universal
                     if (applyFinalPostProcessing)
                     {
                         var sourceForFinalPass = m_ActiveCameraColorAttachment;
-                        finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, false, false,true);
+                        finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, true, false,true);
                         EnqueuePass(finalPostProcessPass);
                     }
                     BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
