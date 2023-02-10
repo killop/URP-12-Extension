@@ -1,0 +1,17 @@
+{
+  "name":"com.happyelements.adaptiveperformance",
+  "version": "1.0.0",
+  "displayName": "happyelements-adaptiveperformance",
+  "description": "性能适配",
+  "unity": "2020.2",
+  "author": {
+    "name": "yancai.zhu",
+    "url": "https://github.com/killop"
+  },
+  "dependencies": {
+    
+  },
+  "keywords": [
+    "adaptiveperformance"
+  ]
+}
