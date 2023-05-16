@@ -24,6 +24,6 @@ Table of Contents
 
 ## 更新日志
 #### 2023-05-16
-* 实现了 https://zhuanlan.zhihu.com/p/626256175?文章里面 所说的优化
+* 实现了 [URP渲染优化总结](https://zhuanlan.zhihu.com/p/626256175?)文章里面 所说的优化
 * 场景相机用 swapbuffer 渲染，UI 相机直接用cameraTarget渲染，省去了一次blit 操作和一张RT
 * 这次更新之后，暂时不支持 UI相机的gamma空间渲染，如果想支持，也是非常简单，修改UI 相机的cameraTarget为RT，UI元素在gamma 空间渲染，最终用FinaBlitPass 到屏幕上，参考2023-05-16 之前的版本
