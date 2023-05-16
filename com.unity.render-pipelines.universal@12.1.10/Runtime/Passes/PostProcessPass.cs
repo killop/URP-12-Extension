@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine.Experimental.Rendering;
-using System.Collections.Generic;
 
 namespace UnityEngine.Rendering.Universal
 {
@@ -156,15 +156,15 @@ namespace UnityEngine.Rendering.Universal.Internal
                 m_CustomPostProcess.Cleanup();
                 m_CustomPostProcess = null;
             }
-        } 
+        }
 
         public void Setup(
-            in RenderTextureDescriptor baseDescriptor, 
+            in RenderTextureDescriptor baseDescriptor,
             in RenderTargetHandle source,
             bool resolveToScreen,
-            in RenderTargetHandle depth, 
-            in RenderTargetHandle internalLut, 
-            bool hasFinalPass, 
+            in RenderTargetHandle depth,
+            in RenderTargetHandle internalLut,
+            bool hasFinalPass,
             bool enableSRGBConversion
             )
         {
@@ -379,10 +379,11 @@ namespace UnityEngine.Rendering.Universal.Internal
             List<XPostProcessing.AbstractVolumeRenderer> activeVolumeRenderers = null;
             if (m_CustomPostProcess != null)
             {
-                activeVolumeRenderers=  m_CustomPostProcess.GetAcitvePostProcessingRenderers();
+                activeVolumeRenderers = m_CustomPostProcess.GetAcitvePostProcessingRenderers();
                 amountOfPassesRemaining += activeVolumeRenderers.Count;
             }
-            if (ScreenTransitionSingleFocusSoft.Instance != null&& ScreenTransitionSingleFocusSoft.Instance.IsWorking()) {
+            if (ScreenTransitionSingleFocusSoft.Instance != null && ScreenTransitionSingleFocusSoft.Instance.IsWorking())
+            {
                 amountOfPassesRemaining++;
             }
             if (m_UseSwapBuffer && amountOfPassesRemaining > 0)
@@ -468,7 +469,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                     Swap(ref renderer);
                 }
             }
-            if (ScreenTransitionSingleFocusSoft.Instance != null&& ScreenTransitionSingleFocusSoft.Instance.IsWorking())
+            if (ScreenTransitionSingleFocusSoft.Instance != null && ScreenTransitionSingleFocusSoft.Instance.IsWorking())
             {
                 ScreenTransitionSingleFocusSoft.Instance.Draw(cmd, GetSource(), GetDestination());
                 Swap(ref renderer);
@@ -1506,73 +1507,73 @@ namespace UnityEngine.Rendering.Universal.Internal
                 switch (cameraData.imageScalingMode)
                 {
                     case ImageScalingMode.Upscaling:
-                    {
-                        // In the upscaling case, set material keywords based on the selected upscaling filter
-                        // Note: If FSR is enabled, we go down this path regardless of the current render scale. We do this because
-                        //       FSR still provides visual benefits at 100% scale. This will also make the transition between 99% and 100%
-                        //       scale less obvious for cases where FSR is used with dynamic resolution scaling.
-                        switch (cameraData.upscalingFilter)
                         {
-                            case ImageUpscalingFilter.Point:
+                            // In the upscaling case, set material keywords based on the selected upscaling filter
+                            // Note: If FSR is enabled, we go down this path regardless of the current render scale. We do this because
+                            //       FSR still provides visual benefits at 100% scale. This will also make the transition between 99% and 100%
+                            //       scale less obvious for cases where FSR is used with dynamic resolution scaling.
+                            switch (cameraData.upscalingFilter)
                             {
-                                material.EnableKeyword(ShaderKeywordStrings.PointSampling);
-                                break;
+                                case ImageUpscalingFilter.Point:
+                                    {
+                                        material.EnableKeyword(ShaderKeywordStrings.PointSampling);
+                                        break;
+                                    }
+
+                                case ImageUpscalingFilter.Linear:
+                                    {
+                                        // Do nothing as linear is the default filter in the shader
+                                        break;
+                                    }
+
+                                case ImageUpscalingFilter.FSR:
+                                    {
+                                        m_Materials.easu.shaderKeywords = null;
+
+                                        var upscaleRtDesc = tempRtDesc;
+                                        upscaleRtDesc.width = cameraData.pixelWidth;
+                                        upscaleRtDesc.height = cameraData.pixelHeight;
+
+                                        // EASU
+                                        cmd.GetTemporaryRT(ShaderConstants._UpscaledTexture, upscaleRtDesc, FilterMode.Point);
+                                        isUpscaledTextureUsed = true;
+
+                                        var fsrInputSize = new Vector2(cameraData.cameraTargetDescriptor.width, cameraData.cameraTargetDescriptor.height);
+                                        var fsrOutputSize = new Vector2(cameraData.pixelWidth, cameraData.pixelHeight);
+                                        FSRUtils.SetEasuConstants(cmd, fsrInputSize, fsrInputSize, fsrOutputSize);
+
+                                        Blit(cmd, sourceRtId, ShaderConstants._UpscaledTexture, m_Materials.easu);
+
+                                        // RCAS
+                                        // Use the override value if it's available, otherwise use the default.
+                                        float sharpness = cameraData.fsrOverrideSharpness ? cameraData.fsrSharpness : FSRUtils.kDefaultSharpnessLinear;
+
+                                        // Set up the parameters for the RCAS pass unless the sharpness value indicates that it wont have any effect.
+                                        if (cameraData.fsrSharpness > 0.0f)
+                                        {
+                                            // RCAS is performed during the final post blit, but we set up the parameters here for better logical grouping.
+                                            material.EnableKeyword(ShaderKeywordStrings.Rcas);
+                                            FSRUtils.SetRcasConstantsLinear(cmd, sharpness);
+                                        }
+
+                                        // Update the source texture for the next operation
+                                        cmd.SetGlobalTexture(ShaderPropertyId.sourceTex, ShaderConstants._UpscaledTexture);
+                                        PostProcessUtils.SetSourceSize(cmd, upscaleRtDesc);
+
+                                        break;
+                                    }
                             }
 
-                            case ImageUpscalingFilter.Linear:
-                            {
-                                // Do nothing as linear is the default filter in the shader
-                                break;
-                            }
-
-                            case ImageUpscalingFilter.FSR:
-                            {
-                                m_Materials.easu.shaderKeywords = null;
-
-                                var upscaleRtDesc = tempRtDesc;
-                                upscaleRtDesc.width = cameraData.pixelWidth;
-                                upscaleRtDesc.height = cameraData.pixelHeight;
-
-                                // EASU
-                                cmd.GetTemporaryRT(ShaderConstants._UpscaledTexture, upscaleRtDesc, FilterMode.Point);
-                                isUpscaledTextureUsed = true;
-
-                                var fsrInputSize = new Vector2(cameraData.cameraTargetDescriptor.width, cameraData.cameraTargetDescriptor.height);
-                                var fsrOutputSize = new Vector2(cameraData.pixelWidth, cameraData.pixelHeight);
-                                FSRUtils.SetEasuConstants(cmd, fsrInputSize, fsrInputSize, fsrOutputSize);
-
-                                Blit(cmd, sourceRtId, ShaderConstants._UpscaledTexture, m_Materials.easu);
-
-                                // RCAS
-                                // Use the override value if it's available, otherwise use the default.
-                                float sharpness = cameraData.fsrOverrideSharpness ? cameraData.fsrSharpness : FSRUtils.kDefaultSharpnessLinear;
-
-                                // Set up the parameters for the RCAS pass unless the sharpness value indicates that it wont have any effect.
-                                if (cameraData.fsrSharpness > 0.0f)
-                                {
-                                    // RCAS is performed during the final post blit, but we set up the parameters here for better logical grouping.
-                                    material.EnableKeyword(ShaderKeywordStrings.Rcas);
-                                    FSRUtils.SetRcasConstantsLinear(cmd, sharpness);
-                                }
-
-                                // Update the source texture for the next operation
-                                cmd.SetGlobalTexture(ShaderPropertyId.sourceTex, ShaderConstants._UpscaledTexture);
-                                PostProcessUtils.SetSourceSize(cmd, upscaleRtDesc);
-
-                                break;
-                            }
+                            break;
                         }
 
-                        break;
-                    }
-
                     case ImageScalingMode.Downscaling:
-                    {
-                        // In the downscaling case, we don't perform any sort of filter override logic since we always want linear filtering
-                        // and it's already the default option in the shader.
+                        {
+                            // In the downscaling case, we don't perform any sort of filter override logic since we always want linear filtering
+                            // and it's already the default option in the shader.
 
-                        break;
-                    }
+                            break;
+                        }
                 }
             }
             else if (isFxaaEnabled)
@@ -1621,7 +1622,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                     cameraTarget = (cameraData.targetTexture != null) ? new RenderTargetIdentifier(cameraData.targetTexture) : cameraTargetHandle.Identifier();
                 }
                 cmd.SetRenderTarget(cameraTarget, colorLoadAction, RenderBufferStoreAction.Store, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
-                PostProcessUtils.FinalSourceScaleBias(cmd, cameraData.renderScale);
+                PostProcessUtils.FinalSourceScaleBias(cmd, 1);
                 cmd.SetViewProjectionMatrices(Matrix4x4.identity, Matrix4x4.identity);
                 cmd.SetViewport(cameraData.pixelRect);
                 cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, material);
@@ -1632,7 +1633,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 cameraData.renderer.SwapColorBuffer(cmd);
             }
-         
+
             if (isUpscaledTextureUsed)
             {
                 cmd.ReleaseTemporaryRT(ShaderConstants._UpscaledTexture);

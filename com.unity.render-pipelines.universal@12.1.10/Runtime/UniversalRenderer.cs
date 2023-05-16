@@ -621,8 +621,17 @@ namespace UnityEngine.Rendering.Universal
             }
             else
             {
-                m_ActiveCameraColorAttachment = m_ColorBufferSystem.GetBackBuffer();
-                m_ActiveCameraDepthAttachment = m_CameraDepthAttachment;
+                if (sUISplitEnable && cameraData.isUICamera)
+                {
+                    RenderTargetHandle cameraTargetHandle = RenderTargetHandle.GetCameraTarget(cameraData.xr);
+                    m_ActiveCameraColorAttachment = cameraTargetHandle;
+                    m_ActiveCameraDepthAttachment = cameraTargetHandle;
+                }
+                else
+                {
+                    m_ActiveCameraColorAttachment = m_ColorBufferSystem.GetBackBuffer();
+                    m_ActiveCameraDepthAttachment = m_CameraDepthAttachment;
+                }
             }
 
             cameraData.renderer.useDepthPriming = useDepthPriming;
@@ -860,12 +869,10 @@ namespace UnityEngine.Rendering.Universal
             if (lastCameraInTheStack)
             {
                 SetupFinalPassDebug(ref cameraData);
-                bool isLine = true;
-                if (IsGammaCorrectEnable(ref cameraData))
+                if (sUISplitEnable&&cameraData.isUICamera)
                 {
                     applyPostProcessing = false;
                     applyFinalPostProcessing = false;
-                    isLine = false;
                 }
 
                 // Post-processing will resolve to final target. No need for final blit pass.
@@ -905,7 +912,7 @@ namespace UnityEngine.Rendering.Universal
                 // We need final blit to resolve to screen
                 if (!cameraTargetResolved)
                 {
-                    m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass, isLine);
+                    m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass, IsGammaCorrectEnable(ref cameraData));
                     EnqueuePass(m_FinalBlitPass);
                 }
 
@@ -925,44 +932,78 @@ namespace UnityEngine.Rendering.Universal
 #endif
             }
             // stay in RT so we resume rendering on stack after post-processing
-            else if (applyPostProcessing)
+            else //if (applyPostProcessing)
             {
-                postProcessPass.Setup(cameraTargetDescriptor, m_ActiveCameraColorAttachment, false, m_ActiveCameraDepthAttachment, colorGradingLut, false, false);
-                EnqueuePass(postProcessPass);
-
-                if (sUISplitEnable && cameraData.nextIsUICamera)
+                if (applyPostProcessing)
                 {
-                    applyFinalPostProcessing =
-                       ((renderingData.cameraData.antialiasing == AntialiasingMode.FastApproximateAntialiasing) ||
-                       ((renderingData.cameraData.imageScalingMode == ImageScalingMode.Upscaling) && (renderingData.cameraData.upscalingFilter != ImageUpscalingFilter.Linear)));
-                    if (applyFinalPostProcessing)
+                    if (sUISplitEnable && cameraData.nextIsUICamera)
+                    {
+                        applyFinalPostProcessing =
+                            ((renderingData.cameraData.antialiasing == AntialiasingMode.FastApproximateAntialiasing) ||
+                            ((renderingData.cameraData.imageScalingMode == ImageScalingMode.Upscaling) && (renderingData.cameraData.upscalingFilter != ImageUpscalingFilter.Linear)));
+                        var resolveToCameraTarget = !applyFinalPostProcessing;
+                        postProcessPass.Setup(cameraTargetDescriptor, m_ActiveCameraColorAttachment, resolveToCameraTarget, m_ActiveCameraDepthAttachment, colorGradingLut, applyFinalPostProcessing, resolveToCameraTarget);
+                        EnqueuePass(postProcessPass);
+                        if (applyFinalPostProcessing)
+                        {
+                            var sourceForFinalPass = m_ActiveCameraColorAttachment;
+                            finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, true, false);
+                            EnqueuePass(finalPostProcessPass);
+                        }
+                    }
+                    else
+                    {
+                        postProcessPass.Setup(cameraTargetDescriptor, m_ActiveCameraColorAttachment, false, m_ActiveCameraDepthAttachment, colorGradingLut, false, false);
+                        EnqueuePass(postProcessPass);
+                    }
+
+                }
+                else
+                {
+                    if (sUISplitEnable && cameraData.nextIsUICamera)
                     {
                         var sourceForFinalPass = m_ActiveCameraColorAttachment;
-                        finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, true, false);
-                        EnqueuePass(finalPostProcessPass);
+                        m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass);
+                        EnqueuePass(m_FinalBlitPass);
                     }
-                    BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
-                    if (sIsGammaCorrectEnable)
-                    {
-                        transformMode = BlitPass.BlitColorTransform.Line2Gamma;
-                    }
-                    m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
-                    EnqueuePass(m_BlitPass);
                 }
+               // postProcessPass.Setup(cameraTargetDescriptor, m_ActiveCameraColorAttachment, false, m_ActiveCameraDepthAttachment, colorGradingLut, false, false);
+              //  EnqueuePass(postProcessPass);
+
+
+               //if (sUISplitEnable && cameraData.nextIsUICamera)
+               //{
+               //    applyFinalPostProcessing =
+               //       ((renderingData.cameraData.antialiasing == AntialiasingMode.FastApproximateAntialiasing) ||
+               //       ((renderingData.cameraData.imageScalingMode == ImageScalingMode.Upscaling) && (renderingData.cameraData.upscalingFilter != ImageUpscalingFilter.Linear)));
+               //    if (applyFinalPostProcessing)
+               //    {
+               //        var sourceForFinalPass = m_ActiveCameraColorAttachment;
+               //        finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, true, false);
+               //        EnqueuePass(finalPostProcessPass);
+               //    }
+               //    BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
+               //    if (sIsGammaCorrectEnable)
+               //    {
+               //        transformMode = BlitPass.BlitColorTransform.Line2Gamma;
+               //    }
+               //    m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
+               //    EnqueuePass(m_BlitPass);
+               //}
             }
-            else
-            {
-                if (sUISplitEnable && cameraData.nextIsUICamera)
-                {
-                    BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
-                    if (sIsGammaCorrectEnable)
-                    {
-                        transformMode = BlitPass.BlitColorTransform.Line2Gamma;
-                    }
-                    m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
-                    EnqueuePass(m_BlitPass);
-                }
-            }
+           // else
+           // {
+           //     if (sUISplitEnable && cameraData.nextIsUICamera)
+           //     {
+           //         BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
+           //         if (sIsGammaCorrectEnable)
+           //         {
+           //             transformMode = BlitPass.BlitColorTransform.Line2Gamma;
+           //         }
+           //         m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
+           //         EnqueuePass(m_BlitPass);
+           //     }
+           // }
            
             
 

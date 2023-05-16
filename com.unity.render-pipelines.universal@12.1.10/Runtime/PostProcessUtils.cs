@@ -87,7 +87,7 @@ namespace UnityEngine.Rendering.Universal
         }
         internal static void FinalSourceScaleBias(CommandBuffer cmd, float scale)
         {
-            cmd.SetGlobalVector(ShaderConstants._FinalSourceScaleBias, new Vector4(1/scale, 1/scale,0,0));
+            cmd.SetGlobalVector(ShaderConstants._FinalSourceScaleBias, new Vector4(scale, scale,0,0));
         }
         // Precomputed shader ids to same some CPU cycles (mostly affects mobile)
         static class ShaderConstants
