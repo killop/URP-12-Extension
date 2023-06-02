@@ -7,8 +7,8 @@ Table of Contents
 - [URP-12-GammaUIAndSplitResolution](#urp-12-gammauiandsplitresolution)
 - [AdaptivePerformance](#adaptiveperformance)
 - [更新日志](#更新日志)
+    - [2023-06-02](#2023-06-02)
     - [2023-05-16](#2023-05-16)
-    - [2023-05-16](#2023-05-16-1)
 
 ## 概要
   这个库使用的URP版本是 URP 12.1.10,适配unity 2021.3.18f1,在绝大多数安卓苹果手机上，都测试过，没有发现问题。 URP 12.1.7 +2021.3.4 这个组合在部分机型是有bug的（深度贴图适配问题）
@@ -26,7 +26,7 @@ Table of Contents
 
 ## 更新日志
 
-#### 2023-05-16
+#### 2023-06-02
 * 所以增加了 sEnableUICameraUseSwapBuffer 静态变量来控制 UI相机使用 swapBuffer，这样UI 相机也支持后处理，但是多了一次blit操作，有效率消耗，所以建议这个选项只在必要的时候打开
 * 原来的 sIsGammaCorrectEnable 也加回来了，来控制是不是要启动 Gamma矫正
 #### 2023-05-16
