@@ -63,6 +63,8 @@ namespace UnityEngine.Rendering.Universal
         public static bool sUISplitEnable = true;
         public static bool sIsGammaCorrectEnable = false;
 
+        public static bool sEnableUICameraUseSwapBuffer = true;
+
         // Rendering mode setup from UI.
         internal RenderingMode renderingMode => m_RenderingMode;
 
@@ -609,9 +611,17 @@ namespace UnityEngine.Rendering.Universal
                 RenderTargetHandle cameraTargetHandle = RenderTargetHandle.GetCameraTarget(cameraData.xr);
                 bool sceneViewFilterEnabled = camera.sceneViewFilterMode == Camera.SceneViewFilterMode.ShowFiltered;
 
-                //Scene filtering redraws the objects on top of the resulting frame. It has to draw directly to the sceneview buffer.
-                m_ActiveCameraColorAttachment = (createColorTexture && !sceneViewFilterEnabled) ? m_ColorBufferSystem.GetBackBuffer() : cameraTargetHandle;
-                m_ActiveCameraDepthAttachment = (createDepthTexture && !sceneViewFilterEnabled) ? m_CameraDepthAttachment : cameraTargetHandle;
+                if (sUISplitEnable && cameraData.isUICamera&&!sEnableUICameraUseSwapBuffer)
+                {
+                    m_ActiveCameraColorAttachment = cameraTargetHandle;
+                    m_ActiveCameraDepthAttachment = cameraTargetHandle;
+                }
+                else
+                {
+                    //Scene filtering redraws the objects on top of the resulting frame. It has to draw directly to the sceneview buffer.
+                    m_ActiveCameraColorAttachment = (createColorTexture && !sceneViewFilterEnabled) ? m_ColorBufferSystem.GetBackBuffer() : cameraTargetHandle;
+                    m_ActiveCameraDepthAttachment = (createDepthTexture && !sceneViewFilterEnabled) ? m_CameraDepthAttachment : cameraTargetHandle;
+                }
 
                 bool intermediateRenderTexture = createColorTexture || createDepthTexture;
 
@@ -621,7 +631,7 @@ namespace UnityEngine.Rendering.Universal
             }
             else
             {
-                if (sUISplitEnable && cameraData.isUICamera)
+                if (sUISplitEnable && cameraData.isUICamera && !sEnableUICameraUseSwapBuffer)
                 {
                     RenderTargetHandle cameraTargetHandle = RenderTargetHandle.GetCameraTarget(cameraData.xr);
                     m_ActiveCameraColorAttachment = cameraTargetHandle;
@@ -871,9 +881,17 @@ namespace UnityEngine.Rendering.Universal
                 SetupFinalPassDebug(ref cameraData);
                 if (sUISplitEnable&&cameraData.isUICamera)
                 {
-                    applyPostProcessing = false;
-                    applyFinalPostProcessing = false;
+                    if (sEnableUICameraUseSwapBuffer)
+                    {
+                        applyFinalPostProcessing = false;
+                    }
+                    else 
+                    {
+                        applyPostProcessing = false;
+                        applyFinalPostProcessing = false;
+                    }
                 }
+                resolvePostProcessingToCameraTarget = !hasCaptureActions && !hasPassesAfterPostProcessing && !applyFinalPostProcessing;
 
                 // Post-processing will resolve to final target. No need for final blit pass.
                 if (applyPostProcessing)
@@ -909,10 +927,14 @@ namespace UnityEngine.Rendering.Universal
                     // offscreen camera rendering to a texture, we don't need a blit pass to resolve to screen
                     m_ActiveCameraColorAttachment == RenderTargetHandle.GetCameraTarget(cameraData.xr);
 
+               // Debug.LogError("is ui camera "+ cameraData.isUICamera+ " cameraTargetResolved "+ cameraTargetResolved+ " hasPassesAfterPostProcessing "+ hasPassesAfterPostProcessing+ " hasCaptureActions "+ hasCaptureActions+ " applyFinalPostProcessing "+ applyFinalPostProcessing
+               //     + " applyPostProcessing "+ applyPostProcessing);
+               //
+               // Debug.LogError(" attachment " + (m_ActiveCameraColorAttachment == RenderTargetHandle.GetCameraTarget(cameraData.xr)));
                 // We need final blit to resolve to screen
                 if (!cameraTargetResolved)
                 {
-                    m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass, IsGammaCorrectEnable(ref cameraData));
+                    m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass);
                     EnqueuePass(m_FinalBlitPass);
                 }
 
@@ -950,6 +972,16 @@ namespace UnityEngine.Rendering.Universal
                             finalPostProcessPass.SetupFinalPass(sourceForFinalPass, true, true, false);
                             EnqueuePass(finalPostProcessPass);
                         }
+                        if (sEnableUICameraUseSwapBuffer) 
+                        {
+                            BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
+                            if (sIsGammaCorrectEnable)
+                            {
+                                transformMode = BlitPass.BlitColorTransform.Line2Gamma;
+                            }
+                            m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
+                            EnqueuePass(m_BlitPass);
+                        }
                     }
                     else
                     {
@@ -962,9 +994,22 @@ namespace UnityEngine.Rendering.Universal
                 {
                     if (sUISplitEnable && cameraData.nextIsUICamera)
                     {
-                        var sourceForFinalPass = m_ActiveCameraColorAttachment;
-                        m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass);
-                        EnqueuePass(m_FinalBlitPass);
+                        if (sEnableUICameraUseSwapBuffer)
+                        {
+                            BlitPass.BlitColorTransform transformMode = BlitPass.BlitColorTransform.None;
+                            if (sIsGammaCorrectEnable)
+                            {
+                                transformMode = BlitPass.BlitColorTransform.Line2Gamma;
+                            }
+                            m_BlitPass.Setup(Screen.width, Screen.height, transformMode);
+                            EnqueuePass(m_BlitPass);
+                        }
+                        else 
+                        {
+                            var sourceForFinalPass = m_ActiveCameraColorAttachment;
+                            m_FinalBlitPass.Setup(cameraTargetDescriptor, sourceForFinalPass);
+                            EnqueuePass(m_FinalBlitPass);
+                        }
                     }
                 }
                // postProcessPass.Setup(cameraTargetDescriptor, m_ActiveCameraColorAttachment, false, m_ActiveCameraDepthAttachment, colorGradingLut, false, false);

@@ -14,6 +14,8 @@ namespace XPostProcessing
         public FloatParameter NoiseSpeed = new ClampedFloatParameter(0.5f, 0f, 1f);
         public FloatParameter LuminanceJitterThreshold = new ClampedFloatParameter(0.8f, 0f, 1f);
 
+        public Vector4Parameter UVRect = new Vector4Parameter(new Vector4(0f,1f,0f,1f));
+
         public override string GetShaderName()
         {
             return "Hidden/PostProcessing/Glitch/AnalogNoise";
@@ -34,6 +36,7 @@ namespace XPostProcessing
         static class ShaderIDs
         {
             internal static readonly int Params = Shader.PropertyToID("_Params");
+            internal static readonly int UVRect = Shader.PropertyToID("_UVRect");
         }
 
 
@@ -52,6 +55,7 @@ namespace XPostProcessing
             }
 
             m_BlitMaterial.SetVector(ShaderIDs.Params, new Vector4(settings.NoiseSpeed.value, settings.NoiseFading.value, settings.LuminanceJitterThreshold.value, TimeX));
+            m_BlitMaterial.SetVector(ShaderIDs.UVRect, settings.UVRect.value);
 
             cmd.Blit(source, target, m_BlitMaterial);
 

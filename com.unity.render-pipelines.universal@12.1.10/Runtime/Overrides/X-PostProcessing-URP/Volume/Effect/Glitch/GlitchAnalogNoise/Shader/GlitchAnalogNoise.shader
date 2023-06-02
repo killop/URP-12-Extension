@@ -12,6 +12,7 @@ Shader "Hidden/PostProcessing/Glitch/AnalogNoise"
     #include "../../../../Shader/PostProcessing.hlsl"
     
     uniform half4 _Params;
+    uniform half4 _UVRect;
     #define _Speed _Params.x
     #define _Fading _Params.y
     #define _LuminanceJitterThreshold _Params.z
@@ -27,6 +28,9 @@ Shader "Hidden/PostProcessing/Glitch/AnalogNoise"
     {
 
         half4 sceneColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+
+        if (i.uv.x< _UVRect.x || i.uv.x>_UVRect.y || i.uv.y< _UVRect.z || i.uv.y>_UVRect.w)
+            return sceneColor;
         half4 noiseColor = sceneColor;
 
         half luminance = dot(noiseColor.rgb, half3(0.22, 0.707, 0.071));

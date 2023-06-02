@@ -12,6 +12,7 @@ Shader "Hidden/PostProcessing/Glitch/ImageBlockV4"
     #include "../../../../Shader/PostProcessing.hlsl"
 
     uniform half4 _Params;
+    uniform half4 _UVRect;
     #define _Speed _Params.x
     #define _BlockSize _Params.y
     #define _MaxRGBSplitX _Params.z
@@ -30,6 +31,11 @@ Shader "Hidden/PostProcessing/Glitch/ImageBlockV4"
 
     half4 Frag(VaryingsDefault i): SV_Target
     {
+        half4 colorR = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+
+        if (i.uv.x< _UVRect.x || i.uv.x>_UVRect.y || i.uv.y< _UVRect.z || i.uv.y>_UVRect.w)
+            return colorR;
+
         half2 block = randomNoise(floor(i.uv * _BlockSize));
 
         float displaceNoise = pow(block.x, 8.0) * pow(block.x, 3.0);
@@ -41,7 +47,6 @@ Shader "Hidden/PostProcessing/Glitch/ImageBlockV4"
         float noiseY = 0.05 * randomNoise(7.0);
         float2 offset = float2(offsetX * noiseX, offsetY * noiseY);
 
-        half4 colorR = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
         half4 colorG = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + offset);
         half4 colorB = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv - offset);
 

@@ -14,7 +14,7 @@ namespace XPostProcessing
         public FloatParameter BlockSize = new ClampedFloatParameter(8f, 0f, 50f);
         public FloatParameter MaxRGBSplitX = new ClampedFloatParameter(1f, 0f, 25f);
         public FloatParameter MaxRGBSplitY = new ClampedFloatParameter(1f, 0f, 25f);
-
+        public Vector4Parameter UVRect = new Vector4Parameter(new Vector4(0f, 1f, 0f, 1f));
         public override string GetShaderName()
         {
             return "Hidden/PostProcessing/Glitch/ImageBlockV4";
@@ -29,6 +29,7 @@ namespace XPostProcessing
         static class ShaderIDs
         {
             internal static readonly int Params = Shader.PropertyToID("_Params");
+            internal static readonly int UVRect = Shader.PropertyToID("_UVRect");
 
         }
 
@@ -42,7 +43,7 @@ namespace XPostProcessing
             cmd.BeginSample(PROFILER_TAG);
 
             m_BlitMaterial.SetVector(ShaderIDs.Params, new Vector4(settings.Speed.value, settings.BlockSize.value, settings.MaxRGBSplitX.value, settings.MaxRGBSplitY.value));
-
+            m_BlitMaterial.SetVector(ShaderIDs.UVRect, settings.UVRect.value);
             cmd.Blit(source, target, m_BlitMaterial);
 
             cmd.EndSample(PROFILER_TAG);

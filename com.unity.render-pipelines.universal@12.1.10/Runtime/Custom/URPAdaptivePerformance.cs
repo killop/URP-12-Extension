@@ -27,6 +27,35 @@ public class URPAdaptivePerformance
     private static bool? MotionBlurEnable = null;
     private static int? ShadowResolution = null;
     private static bool? BloomEnable = null;
+    // private static int? ScaleWriteFrameCount = null;
+    // private static bool? door= null;
+    private static bool ScaleVaild = false;
+    public static void FlushScaleRadio() 
+    {
+
+        //if (door.HasValue) 
+        //{
+        //    door = null;
+        //    ScaleWriteFrameCount = 20;
+        //}
+    }
+
+    public static void BeginScale() 
+    {
+        ScaleVaild = true;
+    }
+    public static void EndScale() 
+    {
+        ScaleVaild = false;
+    }
+
+    public struct ScaleRecord
+    {
+       // public float lastScaleRadio;
+
+        public int writeFrameCount;
+    
+    }
 
     [RuntimeInitializeOnLoadMethod]
     public static void Init()
@@ -36,8 +65,34 @@ public class URPAdaptivePerformance
 
     public static bool GetScreenScaleRadio(float defaultValue,out float result)
     {
+
+        //if (door.HasValue) 
+        //{
+        //    result = defaultValue;
+        //    return false;
+        //}
+        //if (ScaleWriteFrameCount.HasValue)
+        //{
+        //    ScaleWriteFrameCount--;
+        //    if (ScaleWriteFrameCount <=0)
+        //    {
+        //        //Debug.LogError(currentFrame);
+        //        ScaleWriteFrameCount = null;
+        //    }
+        //    else
+        //    {
+        //        result = defaultValue;
+        //        return false;
+        //    }
+        //}
+        if (!ScaleVaild)
+        {
+            result = defaultValue;
+            return false;
+        }
         if (ScreenScaleRadio.HasValue)
         {
+          //  Debug.LogError("----"+ ScreenScaleRadio.Value);
             result = ScreenScaleRadio.Value;
             return true;
         }
@@ -173,6 +228,8 @@ public class URPAdaptivePerformance
             case (URP_APKEY_SCREEN_SCALE_RADIO):
             {
                ScreenScaleRadio = AdaptivePerformanceConfig.GetFloatConfig(URP_APKEY_SCREEN_SCALE_RADIO,1f);
+               //ScaleWriteFrameCount = null;
+               //door = true;
                break;
             }
             case (URP_APKEY_SHADOW):
